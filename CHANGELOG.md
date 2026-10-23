@@ -5,6 +5,8 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 ## [Unreleased]
 
 ### Fixed
+- A line that starts with `#: phantom:` but does not match the grammar is now a parse error (it used to be silently ignored); a complete instruction followed by a trailing comment is ignored with a warning.
+- `generate` fails when an inserted instruction cannot be read back from the candidate (the number of Phantom instructions must grow by exactly the number planned).
 - Encoders emit the existing `\n`, `\r`, and `\t` escapes for string arguments, preserving these characters when instructions are parsed back in comment, whitespace, and Unicode modes.
 - Integer arguments and instruction versions now require ASCII digits in all encodings. Arabic-Indic, fullwidth, and other Unicode digits produce parse errors instead of being accepted as numbers; malformed versions in otherwise complete comment instructions are diagnosed instead of ignored.
 - Preserve instruction-specific messages when capability checks fail, including all missing capabilities.
