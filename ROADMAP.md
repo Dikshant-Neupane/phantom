@@ -20,8 +20,8 @@ This document outlines the development trajectory of the Phantom dual-layer prog
 
 ## Milestone Details
 
-### v0.1.0 — Initial Release (Current)
-*Status: Implemented locally; not yet published*
+### v0.1.x — Initial Release (Current)
+*Status: Released on GitHub (v0.1.1). Not on PyPI (see `docs/RELEASING.md`).*
 - **Instruction Registry:** Implementation of 7 core instructions (`event.declare`, `event.on`, `diagnostic.note`, `counter.create`, `counter.increment`, `meta.author`, `meta.version`).
 - **Encodings:** 4 fully functional encoding modes (Comment, Whitespace 8-bit, Zero-Width Unicode 2-bit, and Hybrid).
 - **Core Architecture:**
@@ -36,7 +36,7 @@ This document outlines the development trajectory of the Phantom dual-layer prog
 ---
 
 ### v0.2.0 — Developer Tooling & Extended Grammar (Target: Q2 2027)
-*Status: In Planning*
+*Status: In Planning. The first concrete design is [proposal 0001: `invariant.assert`](docs/proposals/0001-invariants.md) (a draft for discussion).*
 - **Extended Instruction Set:**
   - `invariant.assert(condition_expr)`: Declarative assertions evaluated at lifecycle points.
   - `timer.create(name)` / `timer.record(name)`: Built-in execution duration instrumentation.
