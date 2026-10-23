@@ -29,6 +29,7 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 - `meta.license(spdx)` instruction: records an SPDX license identifier as metadata (capability `cap.metadata`).
 
 ### Security
+- Instruction lines are matched in linear time: a crafted line (for example `#: phantom:0.1.0 a.b(` followed by a few thousand spaces) used to take minutes to parse because the pattern backtracked cubically (#78).
 - Opt-in security controls for `phantom run`: `--deny CAP` / `--allow-only CAP` (also on `check` and `inspect`) enforce a capability policy before anything runs (#30), and `--handlers-from DIR` / `--allow-handler PATTERN` decide which `event.on` handler modules may be imported, before importing them (#31).
 
 ## [0.1.1] — 2026-10-21
