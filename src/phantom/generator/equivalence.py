@@ -110,4 +110,7 @@ def _mask_traceback(text: str) -> str:
     The candidate has extra lines, so the same failure is reported at a different
     line number; the failing source line and the exception message still have to match.
     """
-    return _TRACEBACK_LINE.sub(lambda m: m.group(1) + "<n>", text)
+    text = _TRACEBACK_LINE.sub(lambda m: m.group(1) + "<n>", text)
+    # Before Python 3.13 a traceback echoes trailing whitespace of the failing source line;
+    # whitespace is not significant to the program, so it is not a difference either.
+    return "\n".join(line.rstrip() for line in text.split("\n"))
