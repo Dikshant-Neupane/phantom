@@ -31,7 +31,7 @@ PROPERTY_SETTINGS = settings(
 # str.splitlines() also splits on these, Python's tokenizer does not. Strings containing
 # them do not survive a round trip yet (see issues #46 and #51), so they are excluded here
 # and covered by their own tests once that is fixed.
-_PYTHON_DISAGREES = "\x0b\x0c\x1c\x1d\x1e\x85  "
+_PYTHON_DISAGREES = "".join(chr(c) for c in (0x0B, 0x0C, 0x1C, 0x1D, 0x1E, 0x85, 0x2028, 0x2029))
 
 # Everything else, including quotes, backslashes, newlines, tabs, non-ASCII digits,
 # zero-width characters and astral code points, must round-trip exactly.
@@ -98,7 +98,9 @@ def test_the_parser_never_raises_on_arbitrary_text(text):
 @PROPERTY_SETTINGS
 @given(
     text=st.text(
-        alphabet=st.sampled_from(list("#:phantom0.1 meta.author()\"\\\n\t​‌‍﻿ ")),
+        alphabet=st.sampled_from(
+            list("#:phantom0.1 meta.author() ") + [chr(c) for c in (0x22, 0x5C, 0x0A, 0x09, 0x200B, 0x200C, 0x200D, 0xFEFF)]
+        ),
         max_size=200,
     )
 )
