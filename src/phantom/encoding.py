@@ -29,6 +29,7 @@ from phantom.grammar import (
     ZW_REJECTED_CODEPOINTS,
 )
 from phantom.ir import ArgumentType, EncodingMode, PhantomInstruction
+from phantom.lines import split_physical_lines
 
 
 def _instruction_to_text(instruction: str | PhantomInstruction) -> str:
@@ -187,7 +188,7 @@ class WhitespaceDecoder:
         lines: list[str] = []
         in_block = False
         found_block = False
-        for line in block_text.splitlines():
+        for line in split_physical_lines(block_text):
             stripped = line.strip()
             if stripped == WS_BEGIN_MARKER:
                 in_block = True
@@ -300,7 +301,7 @@ class UnicodeDecoder:
         in_block = False
         found_block = False
         collected: list[str] = []
-        for line in block_text.splitlines():
+        for line in split_physical_lines(block_text):
             stripped = line.strip()
             if stripped == ZW_BEGIN_MARKER:
                 in_block = True
@@ -364,7 +365,7 @@ class HybridCodec:
         ws_instructions: list[str] = []
         zw_instructions: list[str] = []
 
-        lines = source_text.splitlines()
+        lines = split_physical_lines(source_text)
         in_ws = False
         ws_lines: list[str] = []
         in_zw = False
@@ -383,7 +384,7 @@ class HybridCodec:
                 if ws_lines:
                     try:
                         decoded = WhitespaceDecoder.decode(ws_lines)
-                        for d_line in decoded.splitlines():
+                        for d_line in split_physical_lines(decoded):
                             d_line = d_line.strip()
                             if d_line:
                                 ws_instructions.append(d_line)
@@ -401,7 +402,7 @@ class HybridCodec:
                 if zw_chars:
                     try:
                         decoded = UnicodeDecoder.decode("".join(zw_chars), strict=True)
-                        for d_line in decoded.splitlines():
+                        for d_line in split_physical_lines(decoded):
                             d_line = d_line.strip()
                             if d_line:
                                 zw_instructions.append(d_line)
@@ -483,7 +484,7 @@ def decode_source(
 
     if mode == EncodingMode.COMMENT:
         results: list[str] = []
-        for line in source_text.splitlines():
+        for line in split_physical_lines(source_text):
             match = COMMENT_LINE_PATTERN.match(line)
             if match:
                 results.append(CommentDecoder.decode(line))
@@ -491,7 +492,7 @@ def decode_source(
 
     if mode == EncodingMode.WHITESPACE:
         results = []
-        lines = source_text.splitlines()
+        lines = split_physical_lines(source_text)
         in_ws = False
         ws_lines: list[str] = []
         for raw_line in lines:
@@ -505,7 +506,7 @@ def decode_source(
                 in_ws = False
                 if ws_lines:
                     decoded = WhitespaceDecoder.decode(ws_lines)
-                    for d_line in decoded.splitlines():
+                    for d_line in split_physical_lines(decoded):
                         d_line = d_line.strip()
                         if d_line:
                             results.append(d_line)
@@ -517,7 +518,7 @@ def decode_source(
 
     if mode == EncodingMode.UNICODE:
         results = []
-        lines = source_text.splitlines()
+        lines = split_physical_lines(source_text)
         in_zw = False
         zw_chars: list[str] = []
         for raw_line in lines:
@@ -531,7 +532,7 @@ def decode_source(
                 in_zw = False
                 if zw_chars:
                     decoded = UnicodeDecoder.decode("".join(zw_chars), strict=True)
-                    for d_line in decoded.splitlines():
+                    for d_line in split_physical_lines(decoded):
                         d_line = d_line.strip()
                         if d_line:
                             results.append(d_line)
@@ -551,7 +552,7 @@ def inspect_encoding(source_text: str) -> dict[str, Any]:
     has_hybrid_header = HYBRID_HEADER in source_text
 
     comment_count = 0
-    for line in source_text.splitlines():
+    for line in split_physical_lines(source_text):
         if COMMENT_LINE_PATTERN.match(line):
             comment_count += 1
 

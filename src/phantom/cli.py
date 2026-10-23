@@ -33,6 +33,7 @@ from phantom.generator.provider import (
 )
 from phantom.generator.workflow import source_digest
 from phantom.ir import EncodingMode, PhantomProgram, Severity, ValidationError
+from phantom.lines import split_physical_lines
 from phantom.parser import parse_file
 from phantom.runtime import PhantomRuntime
 from phantom.validator import audit_source, validate
@@ -490,8 +491,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
             if x != y:
                 sys.stderr.writelines(
                     difflib.unified_diff(
-                        x.splitlines(keepends=True),
-                        y.splitlines(keepends=True),
+                        split_physical_lines(x, keepends=True),
+                        split_physical_lines(y, keepends=True),
                         f"original {tag}",
                         f"candidate {tag}",
                     )

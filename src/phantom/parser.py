@@ -28,6 +28,7 @@ from phantom.ir import (
     SourceLocation,
 )
 from phantom.lexer import Token, TokenType, tokenize
+from phantom.lines import split_physical_lines
 
 _INSTRUCTION_TEXT_PATTERN = re.compile(
     r"^phantom:([0-9]+\.[0-9]+\.[0-9]+)\s+([a-z][a-z0-9]*\.[a-z][a-z0-9_]*)\(\s*(.*?)\s*\)$"
@@ -151,7 +152,7 @@ def parse(content: str, filepath: str = "<string>") -> PhantomProgram:
         except ValueError as exc:
             errors.append(ParseError(f"Cannot decode {block_mode.value} block: {exc}", loc))
             return
-        for line in decoded.splitlines():
+        for line in split_physical_lines(decoded):
             if line.strip():
                 emit(line, loc)
 
