@@ -5,6 +5,7 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 ## [Unreleased]
 
 ### Fixed
+- `validator.py` spelled the bidirectional controls it audits as raw characters; they are now explicit code points, and a test keeps invisible/bidirectional characters out of `src/`, `scripts/` and the workflows.
 - Encoders emit the existing `\n`, `\r`, and `\t` escapes for string arguments, preserving these characters when instructions are parsed back in comment, whitespace, and Unicode modes.
 - Integer arguments and instruction versions now require ASCII digits in all encodings. Arabic-Indic, fullwidth, and other Unicode digits produce parse errors instead of being accepted as numbers; malformed versions in otherwise complete comment instructions are diagnosed instead of ignored.
 - Preserve instruction-specific messages when capability checks fail, including all missing capabilities.
