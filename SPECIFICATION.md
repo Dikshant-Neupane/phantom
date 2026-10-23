@@ -26,7 +26,7 @@ Standard Python does **not** execute the instruction layer. Instructions take ef
 ## 3. File format
 
 1. UTF-8 text, extension `.py`. Undecodable bytes are replaced when reading; no normalisation (NFC/NFKC) is applied.
-2. `\n` and `\r\n` line endings are both accepted. Parsing **MUST NOT** rewrite the file.
+2. Physical source lines are delimited only by `\n`, `\r\n`, or `\r`. Other Unicode separators (including U+0085, U+2028, and U+2029) are source-line content, not line endings. Parsing **MUST NOT** rewrite the file.
 3. Line and column numbers are 1-based (line) and 0-based (column, stored; shown 1-based in diagnostics). The location of an instruction decoded from a whitespace or zero-width block is the location of its block's opening marker.
 
 ## 4. Instruction syntax (comment form)

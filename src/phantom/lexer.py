@@ -23,6 +23,7 @@ from phantom.grammar import (
     ZW_PERMITTED_CODEPOINTS,
     ZW_REJECTED_CODEPOINTS,
 )
+from phantom.lines import split_physical_lines
 
 
 class TokenType(Enum):
@@ -84,7 +85,7 @@ class PhantomLexer:
 
     def iter_tokens(self) -> Iterator[Token]:
         """Yield tokens line by line from source, followed by EOF."""
-        lines = self.source.splitlines()
+        lines = split_physical_lines(self.source)
         state = LexerState.NORMAL
 
         for line_idx, raw_line in enumerate(lines):
