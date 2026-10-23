@@ -261,11 +261,11 @@ def cmd_run(args: argparse.Namespace) -> int:
             sys.stderr.write("\n")
 
     # Diagnostics output
-    diagnostics = runtime.get_diagnostics()
-    if diagnostics:
+    records = runtime.get_diagnostics()
+    if records:
         print("\n--- Phantom Diagnostics ---")
-        for diag in diagnostics:
-            print(str(diag))
+        for record in records:
+            print(str(record))
 
     return host_res.exit_code
 

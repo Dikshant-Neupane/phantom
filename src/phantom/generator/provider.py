@@ -59,10 +59,11 @@ class GeminiProvider(LLMProvider):
         timeout: float = 60.0,
     ) -> None:
         self.timeout = timeout
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.model = model or os.environ.get("PHANTOM_GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
-        if not self.api_key:
+        key = api_key or os.environ.get("GEMINI_API_KEY")
+        if not key:
             raise ProviderError("GEMINI_API_KEY is not set")
+        self.api_key: str = key
+        self.model = model or os.environ.get("PHANTOM_GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
 
     def complete(self, prompt: str) -> str:
         try:

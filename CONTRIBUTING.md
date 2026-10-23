@@ -40,6 +40,7 @@ Stuck at any step? Ask in the issue; that is what `mentor available` is for.
 
 ```bash
 ruff check src tests scripts
+mypy --platform linux && mypy --platform win32   # CI also checks darwin
 pytest
 python scripts/verify_release.py        # needs Python 3.11+
 ```

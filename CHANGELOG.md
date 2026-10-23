@@ -11,9 +11,12 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 - Event handlers are invoked at most once per registration when an event fires, even if they raise `TypeError` or `ValueError`; signature validation no longer retries failing handlers or replaces their original error.
 
 ### Documentation
+- `docs/CI.md`: using Phantom in CI (the reusable GitHub Action and `scripts/ci_check.sh`) and Phantom's own quality gates.
 - Add Hindi translations of the README and Quickstart guide.
 
 ### Added
+- Reusable GitHub Action (`action.yml`) that runs `phantom check` over files and directories, plus `scripts/ci_check.sh` (#28).
+- Quality gates in CI: mypy on the Linux, Windows and macOS views, a coverage gate (90 %), and property-based tests with hypothesis (#26, #29).
 - Contributor automation: comment `/take` to be assigned a `help wanted` issue (and `/release` to give it back), a daily sweep that nudges and then releases inactive claims, path-based PR labels, and a thank-you on a first merged pull request.
 
 ## [0.1.1] — 2026-10-21
