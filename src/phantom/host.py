@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from typing import Any
 
 # How long to wait for the pipes to close after the process tree was killed.
 _DRAIN_SECONDS = 5.0
@@ -26,13 +27,6 @@ class HostResult:
     stderr: str
     duration_ms: float
     exception: str | None = None
-
-
-def _group_options() -> dict[str, object]:
-    """Popen options that put the host in its own process group / session."""
-    if os.name == "nt":
-        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
-    return {"start_new_session": True}
 
 
 class _WindowsJob:
@@ -92,7 +86,7 @@ class _WindowsJob:
 
 def _kill_tree(proc: subprocess.Popen[str], job: _WindowsJob | None) -> None:
     """Kill the host and everything it started."""
-    if os.name == "nt":
+    if sys.platform == "win32":
         if job is not None and job.terminate():
             return
         subprocess.run(
@@ -151,6 +145,12 @@ def execute_host_program(
     start_time = time.perf_counter()
     job: _WindowsJob | None = None
     try:
+        # The host gets its own process group (POSIX session) so the whole tree can be killed.
+        group: dict[str, Any] = (
+            {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+            if sys.platform == "win32"
+            else {"start_new_session": True}
+        )
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -159,9 +159,9 @@ def execute_host_program(
             env=merged_env,
             encoding="utf-8",
             errors="replace",
-            **_group_options(),  # type: ignore[arg-type]
+            **group,
         )
-        if os.name == "nt":
+        if sys.platform == "win32":
             job = _WindowsJob(proc.pid)
         try:
             stdout, stderr = proc.communicate(timeout=timeout)
