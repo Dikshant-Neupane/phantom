@@ -101,6 +101,7 @@ def _mask(text: str, directory: str) -> str:
     return text
 
 
+_CARET_LINE = re.compile(r"^\s*[\^~]+$")
 _TRACEBACK_LINE = re.compile(r'(File "<dir>[^"]*", line )\d+')
 
 
@@ -113,4 +114,7 @@ def _mask_traceback(text: str) -> str:
     text = _TRACEBACK_LINE.sub(lambda m: m.group(1) + "<n>", text)
     # Before Python 3.13 a traceback echoes trailing whitespace of the failing source line;
     # whitespace is not significant to the program, so it is not a difference either.
-    return "\n".join(line.rstrip() for line in text.split("\n"))
+    # Python 3.11+ underlines the failing expression (``~~~^^^``); where the underline
+    # starts and ends depends on the exact source text, so it is cosmetic too.
+    lines = [line.rstrip() for line in text.split("\n")]
+    return "\n".join(line for line in lines if not _CARET_LINE.match(line))
