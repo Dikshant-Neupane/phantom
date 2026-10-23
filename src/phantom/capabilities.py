@@ -115,3 +115,32 @@ class CapabilityGrant:
     def __repr__(self) -> str:
         caps = ", ".join(sorted(c.name for c in self.granted))
         return f"CapabilityGrant({caps})"
+
+
+def parse_capability(name: str) -> Capability:
+    """Parse ``cap.events`` or just ``events`` into a Capability.
+
+    Raises:
+        ValueError: If the name is not one of the known capabilities.
+    """
+    wanted = name.strip().lower()
+    if not wanted.startswith("cap."):
+        wanted = f"cap.{wanted}"
+    for capability in Capability:
+        if capability.value == wanted:
+            return capability
+    known = ", ".join(c.value for c in Capability)
+    raise ValueError(f"unknown capability '{name}' (known: {known})")
+
+
+def build_policy(
+    deny: Iterable[Capability] = (),
+    allow_only: Iterable[Capability] | None = None,
+) -> CapabilityGrant:
+    """Build a grant from a command-line style policy.
+
+    ``allow_only`` (when given) replaces the default set; ``deny`` is then
+    subtracted. With neither, every capability is granted.
+    """
+    base = DEFAULT_CAPABILITIES if allow_only is None else frozenset(allow_only)
+    return CapabilityGrant(base - frozenset(deny))

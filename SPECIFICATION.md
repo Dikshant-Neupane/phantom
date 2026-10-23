@@ -176,6 +176,12 @@ Performed on the whole program before anything runs, in source order. **Errors**
 ### 9.3 Trust
 Resolving a handler path imports a module (`importlib.import_module`), which executes that module's top-level code in the Phantom process. A handler path in a file therefore has the authority of an import. Only run files you trust. The host's directory and the current directory are placed on `sys.path` for resolution.
 
+### 9.4 Capability policy and handler allow-list (opt-in)
+By default `phantom run` grants all five capabilities and allows any importable handler. Two opt-in restrictions exist:
+
+- **Capability policy:** `--deny CAP` (repeatable) removes a capability; `--allow-only CAP` (repeatable) replaces the default set, and `--deny` is applied on top. `CAP` is `cap.events` or just `events`. The policy is checked **statically**: an instruction that needs a denied capability is a validation error naming the instruction and capability, so nothing runs. If `cap.stdio` is denied the host is not started (exit 2). `phantom check` accepts the same flags (to enforce a policy in CI) and `phantom inspect` marks the instructions a policy would block (`blocked_by_policy` in `--json`).
+- **Handler allow-list:** `--handlers-from DIR` (repeatable) and `--allow-handler PATTERN` (repeatable, `fnmatch` against the dotted path, e.g. `myapp.hooks.*`). When either is given, a handler is imported only if it matches a pattern or its top-level module lives inside one of the directories. The decision is made **before** importing (the top-level module is located with `importlib.util.find_spec`, which does not execute it); a rejected handler becomes an `ERROR` diagnostic and its module is never imported. Installed packages and the standard library are rejected unless a pattern allows them. Python callables registered through the API are not restricted.
+
 ## 10. Host isolation
 - Parsing, `check` and `inspect` read text only.
 - Phantom never adds imports, globals or decorators to the host and never edits the host file. `phantom generate` writes only a *separate* candidate file, and only when `--output` is given.

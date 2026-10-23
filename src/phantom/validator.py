@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+from phantom.capabilities import CapabilityGrant, get_required_capabilities
 from phantom.grammar import INSTRUCTION_REGISTRY, SUPPORTED_VERSIONS
 from phantom.ir import (
     InstructionType,
@@ -163,4 +164,25 @@ def audit_source(source: str, filename: str = "<string>") -> list[ValidationErro
                         source=SourceLocation(filename, lineno, col, EncodingMode.UNICODE),
                     )
                 )
+    return findings
+
+
+def check_policy(program: PhantomProgram, grant: CapabilityGrant) -> list[ValidationError]:
+    """Report every instruction that needs a capability the policy does not grant.
+
+    Statically decidable, so a denied capability stops a run before anything starts.
+    """
+    findings: list[ValidationError] = []
+    for inst in program.instructions:
+        missing = get_required_capabilities(inst.type) - grant.granted
+        if missing:
+            names = ", ".join(sorted(c.value for c in missing))
+            findings.append(
+                ValidationError(
+                    f"Instruction '{inst.identifier}' requires {names}, "
+                    "which the capability policy denies",
+                    inst,
+                    inst.source,
+                )
+            )
     return findings

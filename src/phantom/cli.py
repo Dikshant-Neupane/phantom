@@ -15,7 +15,13 @@ import sys
 from typing import Any
 
 from phantom import diagnostics
-from phantom.capabilities import INSTRUCTION_CAPABILITIES
+from phantom.capabilities import (
+    INSTRUCTION_CAPABILITIES,
+    Capability,
+    CapabilityGrant,
+    build_policy,
+    parse_capability,
+)
 from phantom.generator import (
     ComparisonVerdict,
     GenerationRequest,
@@ -32,10 +38,11 @@ from phantom.generator.provider import (
     redact,
 )
 from phantom.generator.workflow import source_digest
+from phantom.handler_policy import HandlerPolicy
 from phantom.ir import EncodingMode, PhantomProgram, Severity, ValidationError
 from phantom.parser import parse_file
 from phantom.runtime import PhantomRuntime
-from phantom.validator import audit_source, validate
+from phantom.validator import audit_source, check_policy, validate
 from phantom.version import __version__
 
 
@@ -49,6 +56,47 @@ def load_and_parse(filepath: str) -> PhantomProgram:
 def load_and_validate(program: PhantomProgram) -> list[ValidationError]:
     """Validate a PhantomProgram."""
     return validate(program)
+
+
+def _capability_arg(value: str) -> Capability:
+    try:
+        return parse_capability(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
+def _add_policy_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--deny",
+        action="append",
+        type=_capability_arg,
+        metavar="CAP",
+        help="Deny a capability (for example cap.events); repeatable. "
+        "An instruction that needs it is a validation error",
+    )
+    parser.add_argument(
+        "--allow-only",
+        action="append",
+        type=_capability_arg,
+        metavar="CAP",
+        help="Grant only these capabilities (repeatable); --deny is applied on top",
+    )
+
+
+def _grant_from_args(args: argparse.Namespace) -> CapabilityGrant | None:
+    """The capability policy requested on the command line, or None for the default."""
+    deny = getattr(args, "deny", None)
+    allow_only = getattr(args, "allow_only", None)
+    if not deny and not allow_only:
+        return None
+    return build_policy(deny or (), allow_only)
+
+
+def _handler_policy_from_args(args: argparse.Namespace) -> HandlerPolicy:
+    return HandlerPolicy.create(
+        getattr(args, "handlers_from", None) or (),
+        getattr(args, "allow_handler", None) or (),
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -70,6 +118,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 1
 
     val_errors = load_and_validate(program)
+    grant = _grant_from_args(args)
+    if grant is not None:
+        val_errors += check_policy(program, grant)
     all_diagnostics: list[Any] = list(program.errors) + list(val_errors)
     if args.strict:
         with open(filepath, encoding="utf-8", errors="replace") as f:
@@ -121,6 +172,14 @@ def cmd_inspect(args: argparse.Namespace) -> int:
         with open(filepath, encoding="utf-8", errors="replace") as f:
             strict_findings = audit_source(f.read(), filepath)
 
+    grant = _grant_from_args(args)
+
+    def blocked_by(inst: Any) -> list[str]:
+        if grant is None:
+            return []
+        needed = INSTRUCTION_CAPABILITIES.get(inst.type, frozenset())
+        return sorted(c.value for c in needed - grant.granted)
+
     if args.json:
         data = {
             "source_file": program.source_file or filepath,
@@ -147,6 +206,7 @@ def cmd_inspect(args: argparse.Namespace) -> int:
                             inst.type, frozenset()
                         )
                     ),
+                    **({"blocked_by_policy": blocked_by(inst)} if grant is not None else {}),
                 }
                 for inst in program.instructions
             ],
@@ -185,6 +245,9 @@ def cmd_inspect(args: argparse.Namespace) -> int:
         print(f"      Source:       {inst.source.file}:{inst.source.line}:{inst.source.column}")
         print(f"      Encoding:     {inst.source.encoding.value}")
         print(f"      Capabilities: {caps_str}")
+        denied = blocked_by(inst)
+        if denied:
+            print(f"      Policy:       BLOCKED (denied: {', '.join(denied)})")
 
     return 2 if strict_findings else 0
 
@@ -215,6 +278,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 1
 
     val_errors = load_and_validate(program)
+    grant = _grant_from_args(args)
+    if grant is not None:
+        val_errors += check_policy(program, grant)
     all_diagnostics = list(program.errors) + list(val_errors)
 
     error_count = sum(
@@ -237,8 +303,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         f"[OK] Validation passed ({program.instruction_count} instruction(s), {warning_count} warning(s))"
     )
 
+    if grant is not None and Capability.STDIO not in grant:
+        print(
+            "Error: cap.stdio is denied by the capability policy, so the host program "
+            "will not be started",
+            file=sys.stderr,
+        )
+        return 2
+
     # Initialize runtime
-    runtime = PhantomRuntime()
+    runtime = PhantomRuntime(grant, _handler_policy_from_args(args))
     init_errors = runtime.initialize(program)
     if init_errors:
         for r_err in init_errors:
@@ -534,6 +608,7 @@ def create_parser() -> argparse.ArgumentParser:
     check_p.add_argument(
         "--format", choices=("text", "sarif"), default="text", help="Output format"
     )
+    _add_policy_args(check_p)
 
     # inspect
     inspect_p = subparsers.add_parser(
@@ -548,6 +623,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="List suspicious invisible code points (exit 2 if any)",
     )
+    _add_policy_args(inspect_p)
 
     # run
     run_p = subparsers.add_parser(
@@ -559,6 +635,20 @@ def create_parser() -> argparse.ArgumentParser:
         type=float,
         default=30.0,
         help="Host program timeout in seconds (default: 30.0)",
+    )
+    _add_policy_args(run_p)
+    run_p.add_argument(
+        "--handlers-from",
+        action="append",
+        metavar="DIR",
+        help="Only import event handlers whose top-level module lives inside DIR "
+        "(repeatable). Without --handlers-from/--allow-handler any importable module is allowed",
+    )
+    run_p.add_argument(
+        "--allow-handler",
+        action="append",
+        metavar="PATTERN",
+        help="Also allow handlers whose dotted path matches PATTERN (fnmatch, e.g. 'myapp.hooks.*')",
     )
     run_p.add_argument(
         "host_args",

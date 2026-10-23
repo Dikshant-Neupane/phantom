@@ -71,7 +71,7 @@ Hook output precedes the host's output because the host's output is captured and
 | `cap.counters` | `counter.*` |
 | `cap.metadata` | `meta.*` |
 
-`phantom inspect` shows the capabilities each instruction needs. The CLI grants all five. A restricted `CapabilityGrant` can be passed to `PhantomRuntime` from Python; operations then raise `CapabilityError` (initialisation reports it as a warning and skips the instruction). There is no command-line flag for restricted grants in v0.1.0.
+`phantom inspect` shows the capabilities each instruction needs. By default the CLI grants all five. `phantom run|check|inspect` accept `--deny CAP` and `--allow-only CAP` (repeatable): an instruction that needs a denied capability is a validation error, so a denied capability stops `phantom run` before the host starts (and `--deny cap.stdio` refuses to start the host at all). From Python, pass a restricted `CapabilityGrant` to `PhantomRuntime`; operations then raise `CapabilityError` (initialisation reports it and skips the instruction). To limit which modules `event.on` handlers may import, use `phantom run --handlers-from DIR` and/or `--allow-handler PATTERN` (see SPECIFICATION section 9.4); the decision is made before anything is imported.
 
 ## Host guarantees and non-guarantees
 

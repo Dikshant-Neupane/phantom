@@ -102,9 +102,9 @@ Walkthrough: [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
 | Command | Purpose | Executes your code? |
 | :--- | :--- | :--- |
-| `phantom check FILE [--strict] [--format sarif]` | Validate; exit 2 on errors | No |
-| `phantom inspect FILE [--json] [--strict]` | Show recognised instructions, locations, capabilities | No |
-| `phantom run FILE [--timeout SEC] [-- ARGS]` | Validate, apply, run the host; exits with the host's status | **Yes** |
+| `phantom check FILE [--strict] [--format sarif] [--deny CAP] [--allow-only CAP]` | Validate (optionally against a capability policy); exit 2 on errors | No |
+| `phantom inspect FILE [--json] [--strict] [--deny CAP] [--allow-only CAP]` | Show recognised instructions, locations, capabilities (and which a policy blocks) | No |
+| `phantom run FILE [--timeout SEC] [--deny CAP] [--allow-only CAP] [--handlers-from DIR] [--allow-handler PATTERN] [-- ARGS]` | Validate, apply, run the host; exits with the host's status | **Yes** |
 | `phantom generate FILE --intent TEXT [--placement …] [--encoding …] [--output …] [--dry-run] [--allow-remote]` | Propose a candidate with Phantom instructions | No (sends source to the provider) |
 | `phantom diff ORIGINAL CANDIDATE` | Unified diff | No |
 | `phantom verify ORIGINAL CANDIDATE` | Run both and compare stdout/stderr/exit code | **Yes** (both) |

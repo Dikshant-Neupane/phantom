@@ -19,6 +19,7 @@ from phantom.capabilities import (
     CapabilityError,
     CapabilityGrant,
 )
+from phantom.handler_policy import HandlerPolicy
 from phantom.host import HostResult, execute_host_program
 from phantom.ir import (
     InstructionType,
@@ -83,10 +84,15 @@ class DiagnosticCollector:
 class PhantomRuntime:
     """Deterministic runtime for Phantom programs and host execution."""
 
-    def __init__(self, capabilities: CapabilityGrant | None = None) -> None:
+    def __init__(
+        self,
+        capabilities: CapabilityGrant | None = None,
+        handler_policy: HandlerPolicy | None = None,
+    ) -> None:
         self._capabilities: CapabilityGrant = (
             capabilities if capabilities is not None else CapabilityGrant()
         )
+        self._handler_policy: HandlerPolicy = handler_policy or HandlerPolicy()
         self._events: dict[str, list[str | Callable[..., Any]]] = {}
         self._counters: dict[str, tuple[int, int]] = {}
         self._diagnostics: DiagnosticCollector = DiagnosticCollector()
@@ -267,6 +273,12 @@ class PhantomRuntime:
         cwd = os.getcwd()
         if cwd not in sys.path:
             sys.path.insert(0, cwd)
+
+        # Decide before importing anything (importing runs the module's top-level code).
+        # This must come after sys.path is final, or find_spec would not see local modules.
+        denial = self._handler_policy.denial(handler_ref)
+        if denial is not None:
+            raise PermissionError(denial)
 
         last_error: Exception | None = None
         for i in range(len(parts) - 1, 0, -1):
