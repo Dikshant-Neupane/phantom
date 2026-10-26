@@ -109,6 +109,15 @@ def validate(program: PhantomProgram) -> list[ValidationError]:
                         Severity.WARNING,
                     )
 
+        elif inst.type == InstructionType.COUNTER_RESET:
+            name = inst.get_string_arg(0) or ""
+            if name not in counters:
+                add(f"Counter '{name}' reset before it is created", inst)
+            else:
+                # The counter is back at 0, so later increments are
+                # counted against the limit from the reset, not from creation.
+                increments[name] = 0
+
         elif inst.type in (InstructionType.META_AUTHOR, InstructionType.META_VERSION, InstructionType.META_LICENSE):
             prior: PhantomInstruction | None = metas.get(inst.type)
             if prior is not None:

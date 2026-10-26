@@ -166,6 +166,15 @@ class PhantomRuntime:
                     else:
                         self.increment_counter(name)
 
+                elif inst.type == InstructionType.COUNTER_RESET:
+                    name = inst.get_string_arg(0)
+                    if not name:
+                        errors.append(
+                            RuntimeError("counter.reset requires a counter name argument")
+                        )
+                    else:
+                        self.reset_counter(name)
+
                 elif inst.type == InstructionType.DIAGNOSTIC_NOTE:
                     message = inst.get_string_arg(0) or ""
                     self.add_diagnostic(message, source=inst.source)
@@ -394,6 +403,17 @@ class PhantomRuntime:
         new_val = current + 1
         self._counters[name] = (new_val, limit)
         return new_val
+
+    def reset_counter(self, name: str) -> None:
+        """Reset a bounded counter to 0, keeping its limit unchanged.
+
+        Raises RuntimeError if the counter does not exist.
+        """
+        self._capabilities.require(Capability.COUNTERS)
+        if name not in self._counters:
+            raise RuntimeError(f"Counter '{name}' does not exist")
+        _, limit = self._counters[name]
+        self._counters[name] = (0, limit)
 
     def get_counter(self, name: str) -> tuple[int, int]:
         """Get (current, limit) for a named counter."""

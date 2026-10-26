@@ -81,6 +81,32 @@ class TestValidator:
         (finding,) = validate(prog)
         assert finding.severity == Severity.WARNING
 
+    def test_counter_reset_valid(self):
+        prog = parse(
+            '#: phantom:0.1.0 counter.create("c", 2)\n'
+            '#: phantom:0.1.0 counter.increment("c")\n'
+            '#: phantom:0.1.0 counter.reset("c")\n'
+        )
+        # The reset must parse as an instruction, not be dropped as unknown.
+        assert not prog.has_errors
+        assert len(prog.instructions) == 3
+        assert validate(prog) == []
+
+    def test_counter_reset_before_create_is_error(self):
+        prog = parse('#: phantom:0.1.0 counter.reset("ghost")\n')
+        assert any("reset before it is created" in e.message for e in validate(prog))
+
+    def test_counter_reset_restarts_limit_count(self):
+        # After a reset the counter is back at 0, so one more increment
+        # against a limit of 1 must not warn as an overflow.
+        prog = parse(
+            '#: phantom:0.1.0 counter.create("c", 1)\n'
+            '#: phantom:0.1.0 counter.increment("c")\n'
+            '#: phantom:0.1.0 counter.reset("c")\n'
+            '#: phantom:0.1.0 counter.increment("c")\n'
+        )
+        assert validate(prog) == []
+
     def test_unsupported_version(self):
         prog = parse('#: phantom:9.9.9 meta.author("a")\n')
         assert any("Unsupported spec version" in e.message for e in validate(prog))

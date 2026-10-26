@@ -129,6 +129,17 @@ INSTRUCTION_REGISTRY: dict[str, InstructionSpec] = {
         ),
         description="Increment a bounded counter by one.",
     ),
+    "counter.reset": InstructionSpec(
+        type=InstructionType.COUNTER_RESET,
+        arguments=(
+            ArgumentSpec(
+                "name",
+                ArgumentType.STRING,
+                description="Counter name to reset",
+            ),
+        ),
+        description="Reset a previously created bounded counter to 0.",
+    ),
     "meta.author": InstructionSpec(
         type=InstructionType.META_AUTHOR,
         arguments=(

@@ -25,6 +25,7 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 - Add Hindi translations of the README and Quickstart guide.
 
 ### Added
+- `counter.reset(name)` instruction: resets a previously created bounded counter to 0 while keeping its limit; referencing a counter that was not created earlier in the file is a validation error (#105).
 - Reusable GitHub Action (`action.yml`) that runs `phantom check` over files and directories, plus `scripts/ci_check.sh` (#28).
 - Quality gates in CI: mypy on the Linux, Windows and macOS views, a coverage gate (90 %), and property-based tests with hypothesis (#26, #29).
 - Tests for runtime initialization errors, denied instructions, version metadata, and handler resolution diagnostics.

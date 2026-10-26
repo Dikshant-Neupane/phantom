@@ -244,6 +244,61 @@ def test_runtime_counters():
     assert any("exceeded limit" in d.message for d in diags)
 
 
+def test_runtime_reset_counter():
+    runtime = PhantomRuntime()
+    runtime.create_counter("requests", 2)
+    runtime.increment_counter("requests")
+    runtime.increment_counter("requests")
+    assert runtime.get_counter("requests") == (2, 2)
+
+    # Reset keeps the limit and returns the counter to 0
+    runtime.reset_counter("requests")
+    assert runtime.get_counter("requests") == (0, 2)
+    assert runtime.increment_counter("requests") == 1
+
+    # Resetting a counter that was never created is an error
+    with pytest.raises(RuntimeError):
+        runtime.reset_counter("ghost")
+
+
+def test_runtime_initialize_counter_reset():
+    runtime = PhantomRuntime()
+
+    errors = runtime.initialize(PhantomProgram(instructions=[
+        _instruction(InstructionType.COUNTER_CREATE, "runs", 5),
+        _instruction(InstructionType.COUNTER_INCREMENT, "runs"),
+        _instruction(InstructionType.COUNTER_RESET, "runs"),
+    ]))
+
+    assert errors == []
+    assert runtime.get_counter("runs") == (0, 5)
+
+
+def test_runtime_initialize_counter_reset_missing_counter():
+    runtime = PhantomRuntime()
+
+    errors = runtime.initialize(PhantomProgram(instructions=[
+        _instruction(InstructionType.COUNTER_RESET, "ghost"),
+    ]))
+
+    assert [str(error) for error in errors] == ["Counter 'ghost' does not exist"]
+
+
+@pytest.mark.parametrize("values", [(), ("",)])
+def test_runtime_initialize_counter_reset_requires_name(values):
+    runtime = PhantomRuntime()
+    runtime.create_counter("runs", 2)
+
+    errors = runtime.initialize(PhantomProgram(instructions=[
+        _instruction(InstructionType.COUNTER_RESET, *values),
+    ]))
+
+    assert [str(error) for error in errors] == [
+        "counter.reset requires a counter name argument",
+    ]
+    assert runtime.get_counter("runs") == (0, 2)
+
+
 def test_runtime_metadata_and_diagnostics():
     runtime = PhantomRuntime()
     runtime.set_metadata("author", "Alice")

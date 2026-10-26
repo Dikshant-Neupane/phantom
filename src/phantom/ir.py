@@ -20,6 +20,7 @@ class InstructionType(Enum):
     DIAGNOSTIC_NOTE = "diagnostic.note"
     COUNTER_CREATE = "counter.create"
     COUNTER_INCREMENT = "counter.increment"
+    COUNTER_RESET = "counter.reset"
     META_AUTHOR = "meta.author"
     META_VERSION = "meta.version"
     META_LICENSE = "meta.license"

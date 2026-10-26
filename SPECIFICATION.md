@@ -64,6 +64,7 @@ Rules:
 | `diagnostic.note` | `message: string` | `cap.diagnostics` | Executable |
 | `counter.create` | `name: string`, `limit: integer` | `cap.counters` | Executable |
 | `counter.increment` | `name: string` | `cap.counters` | Executable |
+| `counter.reset` | `name: string` | `cap.counters` | Executable |
 | `meta.author` | `name: string` | `cap.metadata` | Metadata only |
 | `meta.license` | `spdx: string` | `cap.metadata` | Metadata only |
 | `meta.version` | `version: string` | `cap.metadata` | Metadata only |
@@ -85,16 +86,19 @@ Creates a counter at 0 with an upper bound. **Validation (errors):** `limit > 0`
 ### 5.5 `counter.increment(name)`
 Increments by one. **Validation:** the counter **MUST** have been created earlier in the file (error); more `counter.increment` instructions than the counter's limit is a *warning*. **Runtime:** incrementing past the limit records an error diagnostic and leaves the counter at its limit; it does not abort the program.
 
-### 5.6 `meta.author(name)`
+### 5.6 `counter.reset(name)`
+Resets a previously created bounded counter to 0, keeping its limit unchanged. **Validation:** the counter **MUST** have been created earlier in the file (error); increments counted against the limit restart from the reset, so increments after a reset are warned about only if they again exceed the limit. **Runtime:** resetting a counter that does not exist raises a runtime error that is reported, not fatal.
+
+### 5.7 `meta.author(name)`
 Record the author's name. A second instruction of the same kind is a *warning*.
 
-### 5.7 `meta.version(version)`
+### 5.8 `meta.version(version)`
 Record the version string. A second instruction of the same kind is a *warning*.
 
-### 5.8 `meta.license(spdx)`
+### 5.9 `meta.license(spdx)`
 Record the SPDX license identifier (e.g., `"MIT"`). A second instruction of the same kind is a *warning*.
 
-### 5.9 Built-in events
+### 5.10 Built-in events
 `phantom.pre_execute`, `phantom.post_execute`, `phantom.shutdown` exist without declaration. They are the only events the runtime fires (§9). Handlers for custom events may be registered but nothing fires them in v0.1.0.
 
 ## 6. Encodings
@@ -148,7 +152,7 @@ Performed on the whole program before anything runs, in source order. **Errors**
 | V3 | Argument count equals the registry arity | error |
 | V4 | Argument types match | error |
 | V5 | `counter.create` limit > 0; counter names unique | error |
-| V6 | `counter.increment` references a created counter | error |
+| V6 | `counter.increment` / `counter.reset` references a created counter | error |
 | V7 | `event.on` references a declared/built-in event; handler is a dotted path | error |
 | V8 | Redeclared event; duplicate `meta.*`; static increments exceed limit | warning |
 | V9 | Block markers are terminated; payloads decode | parse error |
@@ -167,7 +171,7 @@ Performed on the whole program before anything runs, in source order. **Errors**
 1. Read and parse the file (no execution).
 2. Validate. If any error exists: print it, exit **2**, run nothing.
 3. Create the runtime with the default capability grant.
-4. **Initialise:** process *every* instruction in source order — declare events, register handlers, create counters, apply increments, record notes and metadata. Capability failures and runtime errors are reported as warnings.
+4. **Initialise:** process *every* instruction in source order — declare events, register handlers, create counters, apply increments and resets, record notes and metadata. Capability failures and runtime errors are reported as warnings.
 5. Fire `phantom.pre_execute(host_file, args)`.
 6. Run the host as a subprocess (`sys.executable FILE ARGS…`, 30 s timeout, UTF-8). Stdout, stderr and exit code are captured.
 7. Fire `phantom.post_execute(host_file, result)`.

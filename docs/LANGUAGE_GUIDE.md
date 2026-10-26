@@ -26,6 +26,7 @@ The encoders and generator write newline, carriage return, and tab characters in
 | `diagnostic.note(message)` | Records an `INFO` diagnostic with this line's location | Printed after the host output |
 | `counter.create(name, limit)` | Counter at 0, bounded by `limit > 0` | Duplicate name is an error |
 | `counter.increment(name)` | Adds 1 | Needs a prior `counter.create`; past the limit it logs an error diagnostic and stays at the limit |
+| `counter.reset(name)` | Resets the counter to 0, keeping its limit | Needs a prior `counter.create` |
 | `meta.author(name)` | Records the author | Metadata only |
 | `meta.version(version)` | Records a version label | Metadata only |
 | `meta.license(name)` | Records a license label | Metadata only |
@@ -53,11 +54,12 @@ Handlers get only the keyword arguments they name (or all if they take `**kwargs
 ```python
 #: phantom:0.1.0 counter.create("api_calls", 3)
 #: phantom:0.1.0 counter.increment("api_calls")
+#: phantom:0.1.0 counter.reset("api_calls")
 ```
 
 ### When do instructions run?
 
-All at once, in source order, **before the host starts**. The position of an instruction in the file matters only for ordering among instructions (for example `counter.create` must come before `counter.increment`) and for the location shown in diagnostics. An increment written inside a host loop is applied once, not once per iteration. Phantom does not observe the host's control flow.
+All at once, in source order, **before the host starts**. The position of an instruction in the file matters only for ordering among instructions (for example `counter.create` must come before `counter.increment` and `counter.reset`) and for the location shown in diagnostics. An increment written inside a host loop is applied once, not once per iteration. Phantom does not observe the host's control flow.
 
 ## Argument types
 
