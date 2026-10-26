@@ -25,6 +25,7 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 - Add Hindi translations of the README and Quickstart guide.
 
 ### Added
+- Bash and zsh shell completion scripts (`scripts/completions/phantom.bash`, `scripts/completions/phantom.zsh`): tab-complete subcommands and flags; source them from your shell startup file (see `docs/INSTALLATION.md`) (#103).
 - `counter.reset(name)` instruction: resets a previously created bounded counter to 0 while keeping its limit; referencing a counter that was not created earlier in the file is a validation error (#105).
 - `phantom diff` colors added lines green, removed lines red, and hunk headers cyan; pass `--no-color` (globally or on `diff`) or set `NO_COLOR` to any value to get plain output with no ANSI escapes (#104).
 - Reusable GitHub Action (`action.yml`) that runs `phantom check` over files and directories, plus `scripts/ci_check.sh` (#28).

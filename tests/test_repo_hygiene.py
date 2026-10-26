@@ -47,3 +47,44 @@ def test_project_source_contains_no_invisible_or_bidirectional_characters():
         if found:
             problems[str(path.relative_to(ROOT))] = found
     assert problems == {}, f"hidden characters in project files: {problems}"
+
+
+# Bash and zsh completion scripts must offer every subcommand and, scoped to
+# each subcommand's case branch, every flag the live CLI accepts for it.
+# Flags are the long form without dashes; value lists are checked separately.
+COMPLETION_SCRIPTS = {
+    "bash": ROOT / "scripts" / "completions" / "phantom.bash",
+    "zsh": ROOT / "scripts" / "completions" / "phantom.zsh",
+}
+EXPECTED_COMPLETION_SUBCOMMANDS = ("check", "inspect", "run", "generate", "diff", "verify")
+EXPECTED_COMPLETION_FLAGS = {
+    "check": ("strict", "format", "deny", "allow-only"),
+    "inspect": ("json", "strict", "deny", "allow-only"),
+    "run": ("timeout", "deny", "allow-only", "handlers-from", "allow-handler"),
+    "generate": ("stdin", "intent", "placement", "encoding", "output", "dry-run", "provider", "plan-file", "allow-remote"),
+    "diff": ("host-only", "no-color"),
+    "verify": ("timeout",),
+}
+EXPECTED_COMPLETION_VALUES = ("sarif", "whitespace", "unicode")
+
+
+def _completion_branch(text: str, subcommand: str) -> str:
+    lines = text.split("\n")
+    start = next(i for i, line in enumerate(lines) if line.strip() == f"{subcommand})")
+    end = next(i for i in range(start, len(lines)) if lines[i].strip() == ";;")
+    return "\n".join(lines[start:end])
+
+
+def test_shell_completion_scripts_cover_cli():
+    for shell, path in COMPLETION_SCRIPTS.items():
+        assert path.exists(), f"scripts/completions/{path.name} is missing"
+        text = path.read_text(encoding="utf-8")
+        for subcommand in EXPECTED_COMPLETION_SUBCOMMANDS:
+            assert subcommand in text, f"{shell} completions miss subcommand {subcommand}"
+            branch = _completion_branch(text, subcommand)
+            for flag in EXPECTED_COMPLETION_FLAGS[subcommand]:
+                assert f"--{flag}" in branch, (
+                    f"{shell} completions miss --{flag} scoped to {subcommand}"
+                )
+        for value in EXPECTED_COMPLETION_VALUES:
+            assert value in text, f"{shell} completions miss the {value} value"

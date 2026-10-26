@@ -140,6 +140,25 @@ Expected output:
   pip install --upgrade pip
   ```
 
+## Shell Completions
+
+Bash and zsh users get tab completion for subcommands and flags from
+`scripts/completions/phantom.bash` and `scripts/completions/phantom.zsh`.
+For bash, source the script from `~/.bashrc`:
+
+```bash
+source scripts/completions/phantom.bash
+```
+
+For zsh, copy the script to a directory on `$fpath` as `_phantom`
+(e.g. `~/.zsh/completions/_phantom`) and run
+`autoload -Uz compinit && compinit`.
+
+After that, `phantom <TAB>` suggests the subcommands (`check`,
+`inspect`, `run`, `generate`, `diff`, `verify`), and
+`phantom check --<TAB>` or `phantom run --<TAB>` suggest that
+subcommand's flags.
+
 ---
 
 ## Next Steps
