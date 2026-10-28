@@ -45,6 +45,14 @@ class TestArguments:
         (arg,) = parse_arguments(r'"say \"hi\", ok\n"')
         assert arg.value == 'say "hi", ok\n'
 
+    def test_hex_escapes_decode_control_characters(self):
+        (arg,) = parse_arguments(r'"a\x00b\x1bc"')
+        assert arg.value == "a\x00b\x1bc"
+
+    def test_hex_escape_without_two_hex_digits_keeps_old_fallback(self):
+        (arg,) = parse_arguments(r'"a\xzzb"')
+        assert arg.value == "axzzb"
+
     @pytest.mark.parametrize("bad", ['"a" "b"', '"a",', "foo", '"unterminated'])
     def test_malformed(self, bad):
         with pytest.raises(ValueError):

@@ -5,6 +5,7 @@ All notable changes to Phantom are documented here. The format follows [Keep a C
 ## [Unreleased]
 
 ### Fixed
+- A NUL character in a string argument no longer makes a comment encoded file invalid Python: encoders now escape every control character below U+0020 other than tab, line feed and carriage return as `\xNN`, and the parser decodes `\xNN` back to the original character, so the value round trips exactly; `SPECIFICATION.md` section 4 documents the new escape and which characters a string argument may contain (#75).
 - `check`, `inspect`, `verify`, `generate` and `diff` now read sources through one helper: a file that is not valid UTF-8 fails with `Error: '<file>' is not valid UTF-8 (byte 0x.. at position N)` and exit code 1, instead of a traceback (`verify`, `generate`) or silently replaced bytes (`check`, `inspect`, `diff`); a leading UTF-8 BOM is dropped everywhere (#54).
 - A leading UTF-8 BOM no longer silently hides the first instruction: `parse_file`, `check` and `inspect` read sources as `utf-8-sig`, so the BOM is dropped as Python does, and `check --strict` no longer reports it as U+FEFF (#44).
 - Source scanning uses Python physical line endings only (LF, CRLF, CR); strict audit flags NEL, line separator, and paragraph separator.

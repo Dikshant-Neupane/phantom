@@ -5,7 +5,7 @@ from __future__ import annotations
 import string
 
 import pytest
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from phantom.encoding import encode_instruction
@@ -126,9 +126,6 @@ def test_instructions_survive_surrounding_python_code(inst):
     """A Phantom file is still valid Python, and the instruction is found at its own line."""
     import ast
 
-    # A NUL byte in a comment makes the whole file invalid Python; the comment encoder does
-    # not escape it yet (tracked separately), so it is excluded from this property.
-    assume(not any(a.type is ArgumentType.STRING and chr(0) in str(a.value) for a in inst.arguments))
     source = "def f():\n    return 1\n\n" + encode_instruction(inst, EncodingMode.COMMENT) + "\nf()\n"
     ast.parse(source)
     program = parse(source, "<property>")

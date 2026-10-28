@@ -39,10 +39,11 @@ name          = [a-z] [a-z0-9_]*
 arguments     = argument { ws0 "," ws0 argument }
 argument      = string | integer
 string        = '"' { char } '"'
-char          = any character except '"' and '\' | '\' ( '"' | '\' | 'n' | 't' | 'r' )
+char          = any character except '"' and '\' | '\' ( '"' | '\' | 'n' | 't' | 'r' | 'x' hex-digit hex-digit )
 integer       = [ "-" ] digit { digit }
 semver        = digit+ "." digit+ "." digit+
 digit         = [0-9]
+hex-digit     = digit | 'a' ... 'f' | 'A' ... 'F'
 ws0 = { space | tab }     ws1 = space | tab, { space | tab }
 ```
 
@@ -51,6 +52,7 @@ Rules:
 - The instruction **MUST** occupy the whole line. A trailing comment, code before `#:`, or a `#:` inside a string literal makes the line ordinary source (a trailing comment after an otherwise complete instruction is reported as a warning). A line that begins with `#: phantom:` but does not match the grammar (missing parenthesis, no argument list, ...) is a parse error, so typos are never silently ignored.
 - The space after `#:` is optional.
 - Arguments are literals only. Expressions (`1+1`, `"a"+"b"`), names, calls and nesting are a parse error.
+- A string argument may contain any character, including control characters below U+0020. Encoders escape those controls rather than emitting them literally: tab, line feed and carriage return use the named escapes `\t`, `\n` and `\r`, and every other control character below U+0020 uses the `\xNN` escape (two hex digits, for example `\x00` for NUL). The parser decodes `\xNN` back to the original character, so the value round trips exactly. This keeps a comment encoded instruction valid Python: a literal NUL in a comment line would make the whole host file fail to parse, so it never appears literally in encoded output.
 - Integer literals and version components use ASCII decimal digits (`0`–`9`) only. Unicode digits, including Arabic-Indic and fullwidth digits, are not numeric syntax; they remain allowed inside string literals. An otherwise complete comment instruction with a malformed version produces a parse error rather than being ignored.
 - *Reserved:* an unquoted identifier argument (`ArgumentType.IDENTIFIER`) exists in the IR but is not accepted by the v0.1.0 parser.
 - Ordinary comments, including ones mentioning `phantom:0.1.0`, are never instructions unless they match the whole grammar.
