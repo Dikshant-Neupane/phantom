@@ -423,6 +423,45 @@ def test_cli_verify_mismatch(capsys, tmp_path):
     _, err = capsys.readouterr()
     assert "stdout differs" in err
 
+
+def test_cli_verify_multiple_cases(capsys, tmp_path):
+    f1 = tmp_path / "p1.py"
+    f2 = tmp_path / "p2.py"
+    f1.write_text("import sys\nprint(' '.join(sys.argv[1:]))\n")
+    f2.write_text("import sys\nprint(' '.join(sys.argv[1:]))\n")
+    stdin = tmp_path / "in.txt"
+    stdin.write_text("alice\n")
+
+    ret = main(
+        [
+            "verify",
+            str(f1),
+            str(f2),
+            "--args",
+            "a",
+            "--args",
+            "b",
+            "--stdin-file",
+            str(stdin),
+        ]
+    )
+    assert ret == 0
+    out, _ = capsys.readouterr()
+    assert "Case 1:" in out
+    assert "Case 2:" in out
+
+
+def test_cli_verify_missing_stdin_file_is_an_error(capsys, tmp_path):
+    f1 = tmp_path / "p1.py"
+    f2 = tmp_path / "p2.py"
+    f1.write_text("print('A')\n")
+    f2.write_text("print('A')\n")
+
+    ret = main(["verify", str(f1), str(f2), "--stdin-file", str(tmp_path / "nope.txt")])
+    assert ret == 1
+    _, err = capsys.readouterr()
+    assert "Stdin file not found" in err
+
 class FakeTTY(io.StringIO):
     def isatty(self):
         return True
