@@ -435,7 +435,7 @@ def cmd_generate(args: argparse.Namespace, provider: LLMProvider | None = None) 
         args.placement = "beginning"
         if interactive:
             args.placement = _ask(
-                "Where should Phantom be added? [beginning|end|line:N|near:NAME] (beginning) ",
+                "Where should Phantom be added? [beginning|end|line:N|near:NAME|near:Class.method|main-guard] (beginning) ",
                 "beginning",
             )
     if args.encoding is None:
@@ -736,7 +736,7 @@ def create_parser() -> argparse.ArgumentParser:
     gen_p.add_argument(
         "--placement",
         default=None,
-        help="beginning | end | line:N | near:NAME (asked interactively if omitted on a terminal; default: beginning)",
+        help="beginning | end | line:N | near:NAME | near:Class.method | main-guard (asked interactively if omitted on a terminal; default: beginning)",
     )
     gen_p.add_argument(
         "--encoding", default=None, help="comment | whitespace | unicode (asked interactively if omitted on a terminal; default: comment)"

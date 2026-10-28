@@ -12,7 +12,7 @@ program.py ──► [1 local checks] ──► [2 LLM plan] ──► [3 plan v
  candidate + diff ◄── [6 report] ◄── [5 candidate validation] ◄── [4 local transform]
 ```
 
-1. **Local checks.** The input must be valid Python and at most 100 000 characters. The placement is resolved locally (`beginning`, `end`, `line:N`, `near:NAME`). An ambiguous or missing target (`near:f` with two `f`s) is reported and the model is not called.
+1. **Local checks.** The input must be valid Python and at most 100 000 characters. The placement is resolved locally (`beginning`, `end`, `line:N`, `near:NAME`, `near:Class.method`, `main-guard`). An ambiguous or missing target (`near:f` with two `f`s, `near:A.m` with two `A`s or two `m`s) is reported and the model is not called. `main-guard` inserts before the first top-level `if __name__ == "__main__":` guard (`before-main-guard` is accepted as an alias).
 2. **Plan.** The prompt contains the real instruction registry and the numbered source. The model must return a JSON plan (summary, encoding, instructions with arguments and rationale, expected behavior, limitations). Fenced or prose-wrapped JSON is tolerated; nothing else from the model is used.
 3. **Plan validation.** Every instruction is checked against the registry: known identifier, argument count and types, supported encoding, integer line. An invented instruction is rejected. The model's own line numbers are ignored; the locally resolved line is used.
 4. **Transform.** The transformer only *inserts whole lines*. It never edits, moves or removes existing lines. It refuses insertion points inside multi-line strings, brackets or backslash continuations. Line endings (LF/CRLF) are preserved.
@@ -34,7 +34,7 @@ phantom generate program.py --intent "count requests and note startup" \
 | :--- | :--- |
 | `FILE` / `--stdin` | Program to annotate |
 | `--intent TEXT` | What Phantom should do. Prompted interactively if omitted on a terminal; required otherwise |
-| `--placement` | `beginning` (default), `end`, `line:N`, `near:NAME`. Asked interactively if omitted on a terminal |
+| `--placement` | `beginning` (default), `end`, `line:N`, `near:NAME`, `near:Class.method`, `main-guard` (alias: `before-main-guard`). Asked interactively if omitted on a terminal |
 | `--encoding` | Asked interactively if omitted on a terminal. `comment` (default; `comments` accepted), `whitespace`, `unicode`. `hybrid` is refused by the generator: it cannot be validated reliably for LLM-chosen layouts |
 | `--output PATH` | Write the candidate here. Must differ from the input |
 | `--dry-run` | Show plan and diff; write nothing |
